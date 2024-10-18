@@ -11,7 +11,14 @@ export default function Index() {
   return (
 		<>
 			<h1>Welcome to kuizoki!</h1>
-			<a href="/msg">go fetch msg!</a>
+			<ul>
+				<li>
+					<a href="/msg">go fetch msg!</a>
+				</li>
+				<li>
+					<a href="/login">login</a>
+				</li>
+			</ul>
 		</>
   );
 }

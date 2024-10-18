@@ -3,18 +3,31 @@ using Microsoft.AspNetCore.Authentication;
 using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.ConfigureApplicationCookie(options => {
+	options.Cookie.HttpOnly = true;
+	options.Cookie.SecurePolicy = CookieSecurePolicy.None;
+	options.Cookie.SameSite = SameSiteMode.Lax;
+});
+
 builder.Services.AddAuthentication(
 	CookieAuthenticationDefaults.AuthenticationScheme)
-	.AddCookie(options => {
-		options.ExpireTimeSpan = TimeSpan.FromMinutes(1);
-		options.SlidingExpiration = true;
-	});
+		.AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options => {
+			options.Cookie.HttpOnly = true;
+			options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+			options.Cookie.SameSite = SameSiteMode.None;
+		});
+
 builder.Services.AddAuthorizationBuilder()
 	.AddPolicy("admin_only", policy =>
 		policy.RequireRole("admin")
 			.RequireClaim("hello", "true"));
 
 var app = builder.Build();
+app.UseCookiePolicy(new CookiePolicyOptions {
+	Secure = CookieSecurePolicy.None,
+	MinimumSameSitePolicy = SameSiteMode.Lax
+});
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -34,6 +47,9 @@ app.MapPost("/echo", async (HttpRequest req) => {
 // json or form data when implementing client?
 app.MapPost("/login", async (HttpRequest req, HttpContext ctx) => {
 	var form = await req.ReadFormAsync();
+
+	Console.WriteLine(form["email"]);
+	Console.WriteLine(form["password"]);
 	
 	// authenticate user
 	
