@@ -2,8 +2,25 @@ import { createCookie, createCookieSessionStorage } from "@remix-run/node";
 
 const secret = process.env.COOKIE_SECRET || "";
 
+// use SessionData to store:
+// - client ip address => inconvenient for mobile users
+// - user-agent
+// - e-mail
+// - username
+// - user id
+// - role
+// - privilege level
+// - access rights
+// - language preferences
+// - account id
+// - current state
+// - last login
+// - session timeouts
+// - other internal session details
+// NOTE! you could store a jwt token here...
+
 type SessionData = {
-  userId: string;
+  userId: string; // userId is a name.
 };
 
 type SessionFlashData = {
@@ -12,10 +29,10 @@ type SessionFlashData = {
 
 const { getSession, commitSession, destroySession } =
   createCookieSessionStorage<SessionData, SessionFlashData>({
-      cookie: createCookie("__Host-kuizoki_auth", {
+      cookie: createCookie("__Host-SID", {
         path: "/",
         secrets: [secret],
-        maxAge: 30 * 24 * 60 * 60, // see below!
+        maxAge: 30 * 60, // see below!
         httpOnly: true,
         secure: true,
         sameSite: "strict",
@@ -23,7 +40,6 @@ const { getSession, commitSession, destroySession } =
   });
 
 export { getSession, commitSession, destroySession };
-
 
 // Potential improvements and considerations:
 //   - Shorter maxAge for highly sensitive applications.

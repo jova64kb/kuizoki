@@ -10,6 +10,8 @@ export async function loader({
   );
 
   if (session.has("userId")) {
+    const x = session.get("userId");
+    console.log("userId:", x);
     return redirect("/"); // ?
   }
 
