@@ -1,6 +1,7 @@
 import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { useLoaderData } from "@remix-run/react";
 import { commitSession, getSession } from "~/sessions";
+import { createCSRFSeed, createCSRFToken, validateCSRFToken } from "~/utils/csrf";
 
 export async function loader({
   request,
@@ -10,12 +11,21 @@ export async function loader({
   );
 
   if (session.has("userId")) {
-    const x = session.get("userId");
-    console.log("userId:", x);
     return redirect("/"); // ?
   }
 
-  const data = { error: session.get("error") };
+  let seed: string;
+  if (session.has("csrf_seed")) {
+    seed = session.get("csrf_seed") as string;
+  } else {
+    seed = createCSRFSeed();
+    session.set("csrf_seed", seed);
+  }
+  const csrf = createCSRFToken("login", seed); // used as form_token
+  const data = {
+    csrf,
+    error: session.get("error")
+  };
 
   return json(data, {
     headers: {
@@ -38,7 +48,28 @@ export async function action({
   const session = await getSession(
     request.headers.get("Cookie")
   );
+
+  if (!session.has("csrf_seed")) {
+    session.flash("error", "Missing security token.");
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  }
+
   const form = await request.formData();
+  const seed = session.get("csrf_seed") as string;
+  try {
+    validateCSRFToken(String(form.get("form_token")), "login", seed);
+  } catch (error) {
+    session.flash("error", "Invalid security token.");
+    return redirect("/", {
+      headers: {
+        "Set-Cookie": await commitSession(session),
+      },
+    });
+  }
   const email = form.get("email");
   const password = form.get("password");
 
@@ -49,8 +80,7 @@ export async function action({
   );
 
   if (userId == null) {
-    session.flash("error", "Invalid email/password");
-
+    session.flash("error", "Invalid email/password.");
     return redirect("/login", {
       headers: {
         "Set-Cookie": await commitSession(session),
@@ -71,12 +101,13 @@ export async function action({
 }
 
 export default function Login() {
-  const { error } = useLoaderData<typeof loader>();
+  const { csrf, error } = useLoaderData<typeof loader>();
 
   return (
     <div>
       {error ? <div className="error">{error}</div> : null}
       <form method="POST">
+        <input type="hidden" name="form_token" value={csrf} />
         <div>
           <p>login</p>
         </div>

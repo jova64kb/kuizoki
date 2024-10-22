@@ -21,6 +21,7 @@ const secret = process.env.COOKIE_SECRET || "";
 
 type SessionData = {
   userId: string; // userId is a name.
+  csrf_seed: string;
 };
 
 type SessionFlashData = {
