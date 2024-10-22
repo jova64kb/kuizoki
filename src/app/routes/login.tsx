@@ -7,7 +7,7 @@ export async function loader({
   request,
 }: LoaderFunctionArgs) {
   const session = await getSession(
-    request.headers.get("Cookie")
+    request.headers.get("Cookie") // untrusted input!
   );
 
   if (session.has("userId")) {
@@ -46,7 +46,7 @@ export async function action({
   request
 }: ActionFunctionArgs) {
   const session = await getSession(
-    request.headers.get("Cookie")
+    request.headers.get("Cookie") // untrusted input!
   );
 
   if (!session.has("csrf_seed")) {
@@ -58,7 +58,7 @@ export async function action({
     });
   }
 
-  const form = await request.formData();
+  const form = await request.formData(); // src of untrusted input!
   const seed = session.get("csrf_seed") as string;
   try {
     validateCSRFToken(String(form.get("form_token")), "login", seed);
@@ -70,8 +70,8 @@ export async function action({
       },
     });
   }
-  const email = form.get("email");
-  const password = form.get("password");
+  const email = form.get("email"); // untrusted input!
+  const password = form.get("password"); // untrusted input!
 
   // real must be async because of db conn!
   const userId = validateCredentials(

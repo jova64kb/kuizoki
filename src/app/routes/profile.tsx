@@ -9,6 +9,10 @@ export const meta: MetaFunction = () => {
   ];
 };
 
+// NOTE! when retrieving data this must be sanitized.
+// because we might have failed to not trust input
+// somewhere...
+
 export async function loader({
   request
 }: LoaderFunctionArgs) {
