@@ -1,38 +1,10 @@
-import { ActionFunctionArgs, json, LoaderFunctionArgs, redirect } from "@remix-run/node";
-import { useLoaderData } from "@remix-run/react";
+import { ActionFunctionArgs, LoaderFunctionArgs, redirect } from "@remix-run/node";
 import { commitSession, getSession } from "~/sessions";
-import { createCSRFSeed, createCSRFToken, validateCSRFToken } from "~/utils/csrf";
+import { validateCSRFToken } from "~/utils/csrf";
 
-export async function loader({
-  request,
-}: LoaderFunctionArgs) {
-  const session = await getSession(
-    request.headers.get("Cookie") // untrusted input!
-  );
-
-  if (session.has("userId")) {
-    return redirect("/"); // ?
-  }
-
-  let seed: string;
-  if (session.has("csrf_seed")) {
-    seed = session.get("csrf_seed") as string;
-  } else {
-    seed = createCSRFSeed();
-    session.set("csrf_seed", seed);
-  }
-  const csrf = createCSRFToken("login", seed); // used as form_token
-  const data = {
-    csrf,
-    error: session.get("error")
-  };
-
-  return json(data, {
-    headers: {
-      "Set-Cookie": await commitSession(session),
-    },
-  });
-}
+export function loader({ request }: LoaderFunctionArgs) {
+  throw new Response("Not Found", { status: 404 });
+};
 
 // delete!
 function validateCredentials(
@@ -46,7 +18,7 @@ export async function action({
   request
 }: ActionFunctionArgs) {
   const session = await getSession(
-    request.headers.get("Cookie") // untrusted input!
+    request.headers.get("Cookie")
   );
 
   if (!session.has("csrf_seed")) {
@@ -81,7 +53,7 @@ export async function action({
 
   if (userId == null) {
     session.flash("error", "Invalid email/password.");
-    return redirect("/login", {
+    return redirect("/", {
       headers: {
         "Set-Cookie": await commitSession(session),
       },
@@ -93,33 +65,9 @@ export async function action({
   session.set("userId", userId);
 
   // ?
-  return redirect("/", {
+  return redirect("/profile", {
     headers: {
       "Set-Cookie": await commitSession(session),
     },
   });
-}
-
-export default function Login() {
-  const { csrf, error } = useLoaderData<typeof loader>();
-
-  return (
-    <div>
-      {error ? <div className="error">{error}</div> : null}
-      <form method="POST">
-        <input type="hidden" name="form_token" value={csrf} />
-        <div>
-          <p>login</p>
-        </div>
-        <label>
-          E-mail: <input type="email" name="email" />
-        </label>
-        <label>
-          Password:{" "}
-          <input type="password" name="password" />
-        </label>
-        <button type="submit">login</button>
-      </form>
-    </div>
-  );
 }

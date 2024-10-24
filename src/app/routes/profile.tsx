@@ -21,7 +21,7 @@ export async function loader({
   );
 
   if (!session.has("userId")) {
-    return redirect("/login");
+    return redirect("/");
   }
 
   const sessionData = { userId: session.get("userId") };
@@ -29,6 +29,7 @@ export async function loader({
 }
 
 export default function Profile() {
+  // xss could happen here...
   const { userId } = useLoaderData<typeof loader>();
   return (
     <>
